@@ -1,5 +1,8 @@
 .venv
-
 .DS_Store
-
 __pycache__
+
+logs/*
+data/arena_state.json
+data/feedback.md
+data/personalities/gen-*.json
