@@ -39,19 +39,25 @@ Rules:
     )
 
 
-def generate_vote(agent: Agent, question: str, responses: list[Response], feedback: str) -> Vote:
+def generate_vote(
+    agent: Agent,
+    question: str,
+    responses: list[Response],
+    feedback: str,
+) -> Vote:
     """Generate an agent's vote for the best response."""
 
     # Format responses for display (excluding self)
     responses_text = ""
-    valid_choices = []
+    valid_names = []
+    name_to_id = {}
     for r in responses:
         if r.agent_id != agent.personality_id:
-            responses_text += f"\n[{r.agent_id}] {r.agent_name}:\n{r.content}\n"
-            valid_choices.append({"id": r.agent_id, "name": r.agent_name})
+            responses_text += f"\n[{r.agent_name}]:\n{r.content}\n"
+            valid_names.append(r.agent_name)
+            name_to_id[r.agent_name] = r.agent_id
 
-    valid_ids = [c["id"] for c in valid_choices]
-    valid_choices_str = ", ".join([f"{c['name']} ({c['id']})" for c in valid_choices])
+    valid_names_str = ", ".join(valid_names)
 
     system_prompt = f"""You are {agent.name}, voting on other agents' responses. Your vote is public.
 
@@ -67,14 +73,14 @@ Arena history:
 Rules:
 - You cannot vote for yourself
 - Vote based on your criteria
-- Valid choices: {valid_choices_str}"""
+- Valid choices: {valid_names_str}"""
 
     user_prompt = f"""Question: {question}
 
 Responses:
 {responses_text}
 
-Vote for one agent."""
+Vote for one agent by name."""
 
     result = ollama.chat(
         model=agent.model,
@@ -96,18 +102,14 @@ Vote for one agent."""
     vote_data = json.loads(content)
 
     # Validate vote
-    if vote_data["vote"] not in valid_ids:
-        raise ValueError(f"Invalid vote '{vote_data['vote']}' from {agent.name}. Valid: {valid_ids}")
-
-    # Find the voted-for agent's name
-    voted_for_name = next(
-        r.agent_name for r in responses if r.agent_id == vote_data["vote"]
-    )
+    voted_name = vote_data["vote"]
+    if voted_name not in valid_names:
+        raise ValueError(f"Invalid vote '{voted_name}' from {agent.name}. Valid: {valid_names}")
 
     return Vote(
         voter_id=agent.personality_id,
         voter_name=agent.name,
-        voted_for_id=vote_data["vote"],
-        voted_for_name=voted_for_name,
+        voted_for_id=name_to_id[voted_name],
+        voted_for_name=voted_name,
         reasoning=vote_data.get("reasoning"),
     )
