@@ -6,7 +6,7 @@ class Personality(BaseModel):
     """Loaded from personality JSON files."""
     id: str
     name: str
-    model: str | None = None  # Assigned at contestant creation
+    model: str | None = None  # Assigned at agent creation
     persona: str
     voting_criteria: str
     generation: int = 0
@@ -31,16 +31,16 @@ class Agent(BaseModel):
 
 
 class Response(BaseModel):
-    """One contestant's answer to a question."""
-    contestant_id: str
-    contestant_name: str
+    """One agent's answer to a question."""
+    agent_id: str
+    agent_name: str
     model: str
     content: str
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
 class Vote(BaseModel):
-    """A single vote from one contestant to another."""
+    """A single vote from one agent to another."""
     voter_id: str
     voter_name: str
     voted_for_id: str
@@ -58,9 +58,9 @@ class RoundResult(BaseModel):
 
 
 class Elimination(BaseModel):
-    """Record of an eliminated contestant."""
-    contestant_id: str
-    contestant_name: str
+    """Record of an eliminated agent."""
+    agent_id: str
+    agent_name: str
     model: str
     generation: int
     eliminated_round: int
@@ -71,7 +71,7 @@ class Elimination(BaseModel):
 class ArenaState(BaseModel):
     """Full game state, persisted between runs."""
     current_round: int = 0
-    contestants: list[Agent] = []
+    agents: list[Agent] = []
     models: list[str] = [
         "llama3.2:latest",
         "gemma3:12b",
