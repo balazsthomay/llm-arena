@@ -62,9 +62,6 @@ class Elimination(BaseModel):
     agent_id: str
     agent_name: str
     model: str
-    generation: int
-    eliminated_round: int
-    total_votes_received: int
     rounds_survived: int
 
 
