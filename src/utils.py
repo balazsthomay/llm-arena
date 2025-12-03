@@ -65,7 +65,7 @@ def load_feedback() -> str:
     return ""
 
 
-def save_feedback(new_round_summary: str, max_rounds: int = 10) -> None:
+def save_feedback(new_round_summary: str, max_rounds: int = 5) -> None:
     """Append new round summary, keep only last N rounds."""
     
     # Load existing summaries

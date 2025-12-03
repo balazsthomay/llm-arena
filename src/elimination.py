@@ -43,7 +43,11 @@ def eliminate_agents(state: ArenaState, to_eliminate: list[Agent]) -> list[Elimi
     return eliminations
 
 
-def generate_replacement(state: ArenaState, eliminated: list[Elimination]) -> Agent:
+def generate_replacement(
+    state: ArenaState,
+    eliminated: list[Elimination],
+    replacement_index: int = 0,
+) -> Agent:
     """Generate a new persona using the meta-LLM and create an agent."""
     
     survivors_info = [
@@ -95,7 +99,8 @@ The personality should be distinctive and have a clear voting philosophy."""
     console.print(f"  Strategy: {persona_data['strategy_notes']}")
     
     # Create personality ID
-    personality_id = f"round-{state.current_round}-{random.randint(1, 99)}"
+    base_count = len(state.elimination_history) - len(eliminated)
+    personality_id = f"gen-{base_count + replacement_index + 1}"
     
     # Save personality to file
     personality = Personality(
@@ -140,8 +145,8 @@ def run_elimination_phase(state: ArenaState) -> None:
     eliminations = eliminate_agents(state, to_eliminate)
     
     # Generate replacements
-    for _ in eliminations:
-        new_agent = generate_replacement(state, eliminations)
+    for i, _ in enumerate(eliminations):
+        new_agent = generate_replacement(state, eliminations, replacement_index=i)
         state.agents.append(new_agent)
 
 

@@ -45,23 +45,27 @@ def initialize_arena() -> ArenaState:
 def build_round_summary(result: RoundResult, state: ArenaState) -> str:
     """Build a summary string for the feedback file."""
     
-    # Vote counts
-    vote_parts = []
+    # Vote counts (sorted by votes descending)
+    vote_counts = []
     for agent in state.agents:
         count = result.vote_tally.get(agent.personality_id, 0)
-        vote_parts.append(f"{agent.name}→{count}")
-    votes_str = ", ".join(vote_parts)
+        vote_counts.append((agent.name, count))
+    vote_counts.sort(key=lambda x: x[1], reverse=True)
+    votes_str = ", ".join([f"{name}→{count}" for name, count in vote_counts])
     
-    # Who voted for whom
-    voting_record = []
+    # Voting reasons
+    reasons = []
     for vote in result.votes:
-        voting_record.append(f"{vote.voter_name}→{vote.voted_for_name}")
-    voting_str = ", ".join(voting_record)
+        reason = vote.reasoning or "(no reason given)"
+        reasons.append(f"- {vote.voter_name}→{vote.voted_for_name}: \"{reason}\"")
+    reasons_str = "\n".join(reasons)
     
     summary = f"""## Round {result.round_number}
 Question: {result.question}
 Votes: {votes_str}
-Voting record: {voting_str}
+
+Why agents voted:
+{reasons_str}
 """
     return summary
 
