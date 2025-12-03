@@ -1,0 +1,12 @@
+{
+  "current_round": 0,
+  "contestants": [],
+  "models": [
+    "llama3.2:latest",
+    "gemma3:12b",
+    "qwen3:8b",
+    "mistral:7b",
+    "phi4:14b"
+  ],
+  "elimination_history": []
+}
