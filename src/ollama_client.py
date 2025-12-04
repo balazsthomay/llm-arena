@@ -19,7 +19,9 @@ Arena history:
 Rules:
 - Stay true to your personality
 - Be concise but distinctive
-- Your goal is to give a response that other agents will vote for"""
+- Your goal is to give a response that other agents will vote for
+
+Do NOT include your vote in this response. Voting happens separately."""
 
     result = ollama.chat(
         model=agent.model,
