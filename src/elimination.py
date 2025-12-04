@@ -50,6 +50,8 @@ def generate_replacement(
 ) -> Agent:
     """Generate a new persona using the meta-LLM and create an agent."""
     
+    from .utils import load_feedback
+    
     survivors_info = [
         {"name": a.name, "persona": a.persona, "voting_criteria": a.voting_criteria}
         for a in state.agents
@@ -60,6 +62,8 @@ def generate_replacement(
         for e in eliminated
     ]
     
+    feedback = load_feedback()
+    
     prompt = f"""You are designing a new contestant for a debate arena.
 
 Current survivors:
@@ -67,6 +71,9 @@ Current survivors:
 
 Recently eliminated:
 {json.dumps(eliminated_info, indent=2)}
+
+Recent arena history (what's been winning and why):
+{feedback if feedback else "(No history yet)"}
 
 Create a new personality that could compete effectively. You may:
 - Remix traits from survivors
