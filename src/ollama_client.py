@@ -44,6 +44,7 @@ def generate_vote(
     question: str,
     responses: list[Response],
     feedback: str,
+    max_retries: int = 2,
 ) -> Vote:
     """Generate an agent's vote for the best response."""
 
@@ -71,7 +72,7 @@ Arena history:
 {feedback if feedback else "(No history yet)"}
 
 Rules:
-- You cannot vote for yourself
+- You CANNOT vote for yourself
 - Vote based on your criteria
 - Valid choices: {valid_names_str}"""
 
@@ -80,36 +81,50 @@ Rules:
 Responses:
 {responses_text}
 
-Vote for one agent by name."""
+Vote for one agent by name. You must vote for one of: {valid_names_str}"""
 
-    result = ollama.chat(
-        model=agent.model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        format={
-            "type": "object",
-            "properties": {
-                "vote": {"type": "string"},
-                "reasoning": {"type": "string"}
+    for attempt in range(max_retries):
+        result = ollama.chat(
+            model=agent.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            format={
+                "type": "object",
+                "properties": {
+                    "vote": {"type": "string"},
+                    "reasoning": {"type": "string"}
+                },
+                "required": ["vote", "reasoning"]
             },
-            "required": ["vote", "reasoning"]
-        },
-    )
+        )
 
-    content = result["message"]["content"]
-    vote_data = json.loads(content)
+        content = result["message"]["content"]
+        vote_data = json.loads(content)
+        voted_name = vote_data["vote"]
 
-    # Validate vote
-    voted_name = vote_data["vote"]
-    if voted_name not in valid_names:
-        raise ValueError(f"Invalid vote '{voted_name}' from {agent.name}. Valid: {valid_names}")
+        if voted_name in valid_names:
+            return Vote(
+                voter_id=agent.personality_id,
+                voter_name=agent.name,
+                voted_for_id=name_to_id[voted_name],
+                voted_for_name=voted_name,
+                reasoning=vote_data.get("reasoning"),
+            )
 
+        # Invalid vote, retry with stricter prompt
+        user_prompt = f"""Your previous vote "{voted_name}" was invalid. You cannot vote for yourself.
+
+Vote again. You MUST choose one of: {valid_names_str}"""
+
+    # All retries failed, pick randomly
+    import random
+    fallback_name = random.choice(valid_names)
     return Vote(
         voter_id=agent.personality_id,
         voter_name=agent.name,
-        voted_for_id=name_to_id[voted_name],
-        voted_for_name=voted_name,
-        reasoning=vote_data.get("reasoning"),
+        voted_for_id=name_to_id[fallback_name],
+        voted_for_name=fallback_name,
+        reasoning="(random fallback after invalid votes)",
     )
